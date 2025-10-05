@@ -4,6 +4,8 @@ volumes:
   grafana_data: {}
   explorer_config:
   explorer_db:
+  grafana-data:
+    driver: local
 
 services:
   iox:
@@ -32,33 +34,46 @@ services:
       - 8181:8181
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana-enterprise:latest # or a specific version like grafana/grafana:10.4.2
+    container_name: grafana
+    restart: unless-stopped
     ports:
-      - 13000:3000
+      - '3000:3000' # Maps host port 3000 to container port 3000
+    volumes:
+      - grafana-data:/var/lib/grafana # Persists Grafana data
     environment:
-      - INFLUX_HOST=iox:8181
-      - INFLUX_TOKEN=${INFLUXDB_TOKEN}
-      - INFLUX_ORG=company
-      - INFLUX_BUCKET=sensors
-      - GF_INSTALL_PLUGINS=influxdata-flightsql-datasource
-    volumes: 
-      - ./demo/grafana/datasources:/etc/grafana/provisioning/datasources
-      - ./demo/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - grafana_data:/var/lib/grafana/
-    restart: always
-    depends_on:
-      - iox
+      - GF_SECURITY_ADMIN_USER=admin # Default admin user
+      - GF_SECURITY_ADMIN_PASSWORD=secret # Default admin password (CHANGE THIS IN PRODUCTION)
+      - GF_USERS_ALLOW_SIGN_UP=false # Disables user self-registration
+
+  #   grafana:
+  #     image: grafana/grafana:latest
+  #     ports:
+  #       - 3000:3000
+  #     environment:
+  #       - INFLUX_HOST=iox:8181
+  #       - INFLUX_TOKEN=${INFLUXDB_TOKEN}
+  #       - INFLUX_ORG=company
+  #       - INFLUX_BUCKET=sensors
+  #       - GF_INSTALL_PLUGINS=influxdata-flightsql-datasource
+  #     volumes: 
+  # #      - ./demo/grafana/datasources:/etc/grafana/provisioning/datasources
+  # #      - ./demo/grafana/dashboards:/etc/grafana/provisioning/dashboards
+  #       - grafana_data:/var/lib/grafana/
+  #     restart: always
+  #     depends_on:
+  #       - iox
   influxdb3-explorer:
     image: influxdata/influxdb3-ui:latest
     container_name: influxdb3-explorer
     volumes:
-      - explorer_db:/db:rw 
+      - explorer_db:/db:rw
     ports:
       - 8888:80
       - 8889:8888
     environment:
       DEFAULT_INFLUX_SERVER: "http://iox:8181"
-      DEFAULT_SERVER_NAME: "UNLOCKED"
+      DEFAULT_SERVER_NAME: "iox:8181"
       DEFAULT_INFLUX_DATABASE: "__internal"
       DEFAULT_API_TOKEN: ${INFLUXDB_TOKEN}
     command: --mode=query
