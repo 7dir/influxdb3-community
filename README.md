@@ -32,6 +32,7 @@ The default compose uses local filesystem. Use the full recipe for Object Storag
 
 ```
 docker-compose up -f docker-compose.yml -d
+docker exec -it iox influxdb3 create token --admin
 ```
 
 Your local IOx endpoint should be ready on port `8086`

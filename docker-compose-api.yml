@@ -2,8 +2,6 @@ volumes:
   iox_data: {}
   postgres_data: {}
   grafana_data: {}
-  explorer_config:
-  explorer_db:
 
 services:
   iox:
@@ -27,42 +25,26 @@ services:
       INFLUXDB3_OBJECT_STORE: "file"
       INFLUXDB3_DB_DIR: "/data"
     restart: unless-stopped
+    expose:
+      - 8181
     ports:
-      - 8082:8181
+      - 8086:8181
       - 8181:8181
 
   grafana:
     image: grafana/grafana:latest
     ports:
-      - 13000:3000
+      - 3000:3000
     environment:
-      - INFLUX_HOST=iox:8181
+      - INFLUX_HOST=iox:8082
       - INFLUX_TOKEN=${INFLUXDB_TOKEN}
       - INFLUX_ORG=company
       - INFLUX_BUCKET=sensors
       - GF_INSTALL_PLUGINS=influxdata-flightsql-datasource
     volumes: 
       - ./demo/grafana/datasources:/etc/grafana/provisioning/datasources
-      - ./demo/grafana/dashboards:/etc/grafana/provisioning/dashboards
+#      - ./demo/grafana/dashboards:/etc/grafana/provisioning/dashboards
       - grafana_data:/var/lib/grafana/
     restart: always
     depends_on:
       - iox
-  influxdb3-explorer:
-    image: influxdata/influxdb3-ui:latest
-    container_name: influxdb3-explorer
-    volumes:
-      - explorer_db:/db:rw 
-    ports:
-      - 8888:80
-      - 8889:8888
-    environment:
-      DEFAULT_INFLUX_SERVER: "http://iox:8181"
-      DEFAULT_SERVER_NAME: "UNLOCKED"
-      DEFAULT_INFLUX_DATABASE: "__internal"
-      DEFAULT_API_TOKEN: ${INFLUXDB_TOKEN}
-    command: --mode=query
-    restart: unless-stopped
-    depends_on:
-      iox:
-        condition: service_started
