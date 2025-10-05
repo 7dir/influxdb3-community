@@ -11,7 +11,7 @@ datasources:
     basicAuth: false
     isDefault: true
     jsonData:
-      host: iox:8181
+      host: iox:8082
       metadata:
       - bucket-name: company_sensors
       - database: company_sensors
